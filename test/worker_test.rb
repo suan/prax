@@ -1,4 +1,4 @@
 require 'test_helper'
 
-class WorkerTest < Prax::Worker
-end
+#class WorkerTest < Prax::Worker
+#end

@@ -41,18 +41,22 @@ module Prax
       def run
         start
 
-        loop do
+        loop {
           begin
-            IO.select(self.servers + [@pipe.first]).first.each do |stream|
-              if stream == @pipe.first
-                finalize
-              else
-                ssl = stream.is_a?(OpenSSL::SSL::SSLServer)
-                serve(stream.accept, ssl)
-              end
-            end
-            break if @stopping or servers.nil?
+            select_and_perform(self.servers + [@pipe.first])
+            break if @_stopping or servers.nil?
           rescue OpenSSL::SSL::SSLError
+          end
+        }
+      end
+
+      def select_and_perform(streams)
+        IO.select(streams).first.each do |stream|
+          if stream == @pipe.first
+            finalize
+          else
+            ssl = stream.is_a?(OpenSSL::SSL::SSLServer)
+            serve(stream.accept, ssl)
           end
         end
       end
@@ -60,7 +64,7 @@ module Prax
       def start
         @mutex.synchronize do
           return if started?
-          @stopping = false
+          @_stopping = false
           start_servers
         end
 
@@ -69,7 +73,7 @@ module Prax
       end
 
       def stop
-        @stopping = true
+        @_stopping = true
         @pipe.last.write_nonblock('.')
       end
 
@@ -85,7 +89,7 @@ module Prax
       end
 
       def stopping?
-        @stopping
+        @_stopping
       end
 
       # Called when the servers have been started.

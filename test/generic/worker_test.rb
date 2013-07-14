@@ -12,7 +12,6 @@ class GenericWorkerTest < Prax::Generic::Worker
   end
 
   def error(detail); end
-
   def started; $mutex.synchronize { $started.signal }; end
   def stopped; $mutex.synchronize { $stopped.signal }; end
 end

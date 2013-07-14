@@ -19,20 +19,31 @@ module Prax
       end
 
       def start
-        @mutex.synchronize do
-          @threads = size.times.map { spawn }
-        end
+        return if started?
+        @mutex.synchronize { @threads = size.times.map { spawn } }
+        started
       end
 
       def stop
-        @stop = true
+        @_stopping = true
+        stopped
       end
 
-      def perform
-      end
+      def perform; end
+      def started; end
+      def stopped; end
 
-      # TODO: Prax::Generic::Worker#error(detail)
+      # IMPROVE: Prax::Generic::Worker#error(detail)
       def error(detail)
+        puts "\n" + detail.to_s + ":\n" + detail.backtrace.join("\n")
+      end
+
+      def started?
+        @threads and @threads.any?
+      end
+
+      def stopped?
+        @_stopping or @threads.nil? or @threads.empty?
       end
 
       private
@@ -42,16 +53,12 @@ module Prax
               perform
             rescue => detail
               error(detail)
-              respawn unless @stop
-              raise
+            ensure
+              @mutex.synchronize do
+                @threads.delete(Thread.current)
+                respawn unless @_stopping
+              end
             end
-          end
-        end
-
-        def respawn
-          @mutex.synchronize do
-            threads.delete(Thread.current)
-            threads << spawn if threads.size < size
           end
         end
     end

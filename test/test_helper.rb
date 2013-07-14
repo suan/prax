@@ -5,5 +5,9 @@ require 'minitest/colorize'
 require 'minitest/autorun'
 
 Thread.abort_on_exception = true
+
 $queue = Queue.new
+$mutex = Mutex.new
+$started = ConditionVariable.new
+$stopped = ConditionVariable.new
 

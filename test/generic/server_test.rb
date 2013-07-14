@@ -1,9 +1,9 @@
 require 'test_helper'
 require 'prax/generic/server'
 
-$mutex   = Mutex.new
-$started = ConditionVariable.new
-$stopped = ConditionVariable.new
+#$mutex   = Mutex.new
+#$started = ConditionVariable.new
+#$stopped = ConditionVariable.new
 
 class TestGenericServer < Prax::Generic::Server
   def serve(socket, ssl)

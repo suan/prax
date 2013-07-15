@@ -1,29 +1,6 @@
 require 'test_helper'
 require 'prax/generic/server'
 
-#$mutex   = Mutex.new
-#$started = ConditionVariable.new
-#$stopped = ConditionVariable.new
-
-class TestGenericServer < Prax::Generic::Server
-  def serve(socket, ssl)
-    case socket.gets
-    when "PENDING\r\n"
-      sleep 0.2
-    when "IMMEDIATE\r\n"
-    end
-
-    socket.write "OK"
-    socket.close
-  end
-
-  def started; $mutex.synchronize { $started.signal }; end
-  def stopped; $mutex.synchronize { $stopped.signal }; end
-
-  def ssl_crt; File.expand_path('../../ssl/server.crt', __FILE__); end
-  def ssl_key; File.expand_path('../../ssl/server.key', __FILE__); end
-end
-
 describe Prax::Generic::Server do
   before do
     @spawned = []
@@ -196,7 +173,7 @@ describe Prax::Generic::Server do
     end
 
     def spawn(*args)
-      server = TestGenericServer.new(*args)
+      server = GenericServerTest.new(*args)
       thread = Thread.new { server.run }
       $mutex.synchronize { $started.wait($mutex) }
       @spawned << [thread, server]

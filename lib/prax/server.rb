@@ -40,14 +40,20 @@ module Prax
     end
   end
 
+  # NOTE: shall we (still) make the SSL optional?
   def self.run
     @worker = Worker.run
-    @server = Server.run [20559], [:ssl, 20558], [:unix, '/tmp/app.sock']
+    @server = Server.new [Config.http_port], [:ssl, Config.https_port]
+    @server.run
+  end
+
+  def self.stop
+    @server.stop
+    @worker.stop
   end
 
   def self.shutdown
-    @server.stop
-    @worker.stop
-    Process.kill 'TERM', -Process.getpgrp # Kill all children
+    stop
+    Process.kill 'TERM', -Process.getpgrp # kill all processes in group
   end
 end

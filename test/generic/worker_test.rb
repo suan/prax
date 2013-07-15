@@ -1,21 +1,6 @@
 require 'test_helper'
 require 'prax/generic/worker'
 
-class GenericWorkerTest < Prax::Generic::Worker
-  attr_reader :threads
-
-  def perform
-    loop {
-      raise StandardError.new if @faulty
-      break if @_stopping
-    }
-  end
-
-  def error(detail); end
-  def started; $mutex.synchronize { $started.signal }; end
-  def stopped; $mutex.synchronize { $stopped.signal }; end
-end
-
 describe Prax::Generic::Worker do
   after { worker.stop if worker.started? }
 

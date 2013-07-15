@@ -10,7 +10,7 @@ module Prax
 
       # Example:
       #   @server = Server.new [3000], [:ssl, 3001], [:unix, '/tmp/myapp.sock']
-      #   @server.start.run
+      #   @server.run
       def initialize(*config)
         @mutex = Mutex.new
         @pipe  = IO.pipe

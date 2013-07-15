@@ -1,4 +1,5 @@
 require 'test_helper'
+require 'prax/server'
 
-#class ServerTest < Prax::Server
-#end
+describe Prax::Server do
+end

@@ -57,8 +57,8 @@ class GenericServerTest < Prax::Generic::Server
   def started; $mutex.synchronize { $started.signal }; end
   def stopped; $mutex.synchronize { $stopped.signal }; end
 
-  def ssl_crt; File.expand_path('../../ssl/server.crt', __FILE__); end
-  def ssl_key; File.expand_path('../../ssl/server.key', __FILE__); end
+  def ssl_crt; File.expand_path('../ssl/server.crt', __FILE__); end
+  def ssl_key; File.expand_path('../ssl/server.key', __FILE__); end
 end
 
 class GenericWorkerTest < Prax::Generic::Worker
@@ -76,3 +76,45 @@ class GenericWorkerTest < Prax::Generic::Worker
   def stopped; $mutex.synchronize { $stopped.signal }; end
 end
 
+class Minitest::Spec
+  def client(type, hostname, port = nil, &block)
+    case type
+    when :tcp  then tcp_client(hostname,  port, &block)
+    when :ssl  then ssl_client(hostname,  port, &block)
+    when :unix then unix_client(hostname, &block)
+    end
+  end
+
+  def tcp_client(hostname, port)
+    socket = TCPSocket.new(hostname, port)
+    yield socket if block_given?
+  ensure
+    socket.close if socket
+  end
+
+  def unix_client(path)
+    socket = UNIXSocket.new(path)
+    yield socket if block_given?
+  ensure
+    socket.close if socket
+  end
+
+  def ssl_client(hostname, port)
+    tcp_client(hostname, port) do |tcp|
+      socket = OpenSSL::SSL::SSLSocket.new(tcp, ssl_context)
+      socket.sync_close = true
+      socket.connect
+      yield socket if block_given?
+    end
+  end
+
+  def ssl_context
+    @ssl_context ||= begin
+      ctx      = OpenSSL::SSL::SSLContext.new
+      path     = File.expand_path('../ssl', __FILE__)
+      ctx.cert = OpenSSL::X509::Certificate.new(File.read(File.join(path, 'client.crt')))
+      ctx.key  = OpenSSL::PKey::RSA.new(File.read(File.join(path, 'client.key')))
+      ctx
+    end
+  end
+end

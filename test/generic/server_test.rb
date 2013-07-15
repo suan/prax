@@ -15,6 +15,14 @@ describe Prax::Generic::Server do
     File.unlink(@socket_path) if File.exists?(@socket_path)
   end
 
+  let :immediate do
+    proc { |socket| socket.write("IMMEDIATE\r\n"); assert_equal 'OK', socket.gets }
+  end
+
+  let :pending do
+    proc { |socket| socket.write("PENDING\r\n"); assert_equal 'OK', socket.gets }
+  end
+
   describe "initialize" do
     before { @server = Prax::Generic::Server.new }
 
@@ -122,56 +130,7 @@ describe Prax::Generic::Server do
     end
   end
 
-  let(:immediate) do
-    proc { |socket| socket.write("IMMEDIATE\r\n"); assert_equal 'OK', socket.gets }
-  end
-
-  let(:pending) do
-    proc { |socket| socket.write("PENDING\r\n"); assert_equal 'OK', socket.gets }
-  end
-
   protected
-    def client(type, hostname, port = nil, &block)
-      case type
-      when :tcp  then tcp_client(hostname,  port, &block)
-      when :ssl  then ssl_client(hostname,  port, &block)
-      when :unix then unix_client(hostname, &block)
-      end
-    end
-
-    def tcp_client(hostname, port)
-      socket = TCPSocket.new(hostname, port)
-      yield socket
-    ensure
-      socket.close if socket
-    end
-
-    def unix_client(path)
-      socket = UNIXSocket.new(path)
-      yield socket
-    ensure
-      socket.close if socket
-    end
-
-    def ssl_client(hostname, port)
-      tcp_client(hostname, port) do |tcp|
-        socket = OpenSSL::SSL::SSLSocket.new(tcp, ssl_context)
-        socket.sync_close = true
-        socket.connect
-        yield socket
-      end
-    end
-
-    def ssl_context
-      @ssl_context ||= begin
-        ctx      = OpenSSL::SSL::SSLContext.new
-        path     = File.expand_path('../../ssl', __FILE__)
-        ctx.cert = OpenSSL::X509::Certificate.new(File.read(File.join(path, 'client.crt')))
-        ctx.key  = OpenSSL::PKey::RSA.new(File.read(File.join(path, 'client.key')))
-        ctx
-      end
-    end
-
     def spawn(*args)
       server = GenericServerTest.new(*args)
       thread = Thread.new { server.run }
